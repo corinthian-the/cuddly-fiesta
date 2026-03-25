@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Weather App</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      width: 300px;
+    }
+    
+    h1 {
+      color: #333;
+      margin-top: 0;
+    }
+    
+    input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border: 2px solid #ddd;
+      border-radius: 5px;
+      box-sizing: border-box;
+      font-size: 14px;
+    }
+    
+    button {
+      width: 100%;
+      padding: 10px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      font-weight: bold;
+    }
+    
+    button:hover {
+      background: #764ba2;
+    }
+    
+    .weather-info {
+      margin-top: 20px;
+      display: none;
+    }
+    
+    .weather-info.show {
+      display: block;
+    }
+    
+    .city-name {
+      font-size: 24px;
+      font-weight: bold;
+      color: #333;
+      margin-bottom: 10px;
+    }
+    
+    .temperature {
+      font-size: 48px;
+      color: #667eea;
+      font-weight: bold;
+    }
+    
+    .description {
+      font-size: 16px;
+      color: #666;
+      text-transform: capitalize;
+      margin-top: 10px;
+    }
+    
+    .error {
+      color: red;
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .error.show {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌤️ Weather App</h1>
+    
+    <input 
+      type="text" 
+      id="cityInput" 
+      placeholder="Enter city name..." 
+    />
+    <button onclick="getWeather()">Get Weather</button>
+    
+    <div class="weather-info" id="weatherInfo">
+      <div class="city-name" id="cityName"></div>
+      <div class="temperature" id="temperature"></div>
+      <div class="description" id="description"></div>
+    </div>
+    
+    <div class="error" id="error"></div>
+  </div>
+
+  <script>
+    function getWeather() {
+      const city = document.getElementById('cityInput').value.trim();
+      const errorDiv = document.getElementById('error');
+      const weatherDiv = document.getElementById('weatherInfo');
+      
+      // Clear previous messages
+      errorDiv.classList.remove('show');
+      weatherDiv.classList.remove('show');
+      
+      if (!city) {
+        errorDiv.textContent = 'Please enter a city name';
+        errorDiv.classList.add('show');
+        return;
+      }
+      
+      // Free API (no key needed)
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=0&longitude=0&current=temperature_2m,weather_code&timezone=auto`;
+      
+      // Using Open-Meteo API (free, no key required)
+      fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`)
+        .then(response => response.json())
+        .then(data => {
+          if (!data.results || data.results.length === 0) {
+            errorDiv.textContent = 'City not found. Try another name.';
+            errorDiv.classList.add('show');
+            return;
+          }
+          
+          const { latitude, longitude, name, country } = data.results;
+          
+          // Get weather data
+          return fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&timezone=auto`);
+        })
+        .then(response => response.json())
+        .then(data => {
+          const temp = data.current.temperature_2m;
+          const weatherCode = data.current.weather_code;
+          
+          // Simple weather descriptions
+          const descriptions = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Foggy',
+            48: 'Foggy',
+            51: 'Light drizzle',
+            61: 'Slight rain',
+            80: 'Slight rain showers',
+            95: 'Thunderstorm'
+          };
+          
+          document.getElementById('cityName').textContent = city;
+          document.getElementById('temperature').textContent = Math.round(temp) + '°C';
+          document.getElementById('description').textContent = descriptions[weatherCode] || 'Unknown';
+          
+          weatherDiv.classList.add('show');
+        })
+        .catch(error => {
+          errorDiv.textContent = 'Error fetching weather. Try again.';
+          errorDiv.classList.add('show');
+          console.error('Error:', error);
+        });
+    }
+    
+    // Allow Enter key to search
+    document.getElementById('cityInput').addEventListener('keypress', function(event) {
+      if (event.key === 'Enter') {
+        getWeather();
+      }
+    });
+  </script>
+</body>
+</html>
