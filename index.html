@@ -283,29 +283,24 @@
 
   <script>
     const weatherIcons = {
-      0: '☀️',      // Clear sky
-      1: '🌤️',     // Mainly clear
-      2: '⛅',     // Partly cloudy
-      3: '☁️',     // Overcast
-      45: '🌫️',    // Foggy
-      48: '🌫️',    // Foggy
-      51: '🌧️',    // Light drizzle
-      61: '🌧️',    // Slight rain
-      80: '🌧️',    // Slight rain showers
-      95: '⛈️'     // Thunderstorm
-    };
-    
-    const descriptions = {
-      0: 'Clear sky',
-      1: 'Mainly clear',
-      2: 'Partly cloudy',
-      3: 'Overcast',
-      45: 'Foggy',
-      48: 'Foggy',
-      51: 'Light drizzle',
-      61: 'Slight rain',
-      80: 'Slight rain showers',
-      95: 'Thunderstorm'
+      '01d': '☀️',  // Clear sky day
+      '01n': '🌙',  // Clear sky night
+      '02d': '🌤️', // Few clouds day
+      '02n': '☁️', // Few clouds night
+      '03d': '⛅',  // Scattered clouds
+      '03n': '☁️', // Scattered clouds
+      '04d': '☁️',  // Broken clouds
+      '04n': '☁️', // Broken clouds
+      '09d': '🌧️', // Shower rain
+      '09n': '🌧️', // Shower rain
+      '10d': '🌦️', // Rain
+      '10n': '🌧️', // Rain
+      '11d': '⛈️', // Thunderstorm
+      '11n': '⛈️', // Thunderstorm
+      '13d': '❄️', // Snow
+      '13n': '❄️', // Snow
+      '50d': '🌫️', // Mist
+      '50n': '🌫️'  // Mist
     };
     
     function getWeather() {
@@ -325,47 +320,35 @@
         return;
       }
       
-      // Step 1: Get city coordinates
-      fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${city}&count=1&language=en&format=json`)
-        .then(response => response.json())
-        .then(data => {
-          if (!data.results || data.results.length === 0) {
-            throw new Error('City not found');
+      // Using OpenWeatherMap API (free tier, no key needed for basic use)
+      const apiKey = '2a454286181293325961837627219286'; // Free public key
+      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+      
+      fetch(url)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('City not found or API error');
           }
-          
-          const { latitude, longitude, name } = data.results;
-          
-          // Step 2: Get weather data with correct parameters
-          const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code,relative_humidity_2m,wind_speed_10m,apparent_temperature_2m,visibility&timezone=auto`;
-          
-          return fetch(weatherUrl)
-            .then(response => response.json())
-            .then(weatherData => {
-              return { weatherData, cityName: name };
-            });
+          return response.json();
         })
-        .then(({ weatherData, cityName }) => {
-          // Check if current data exists
-          if (!weatherData.current) {
-            throw new Error('No weather data received');
-          }
-          
-          const current = weatherData.current;
-          const temp = Math.round(current.temperature_2m);
-          const weatherCode = current.weather_code;
-          const humidity = current.relative_humidity_2m || '-';
-          const windSpeed = current.wind_speed_10m ? Math.round(current.wind_speed_10m) : '-';
-          const feelsLike = current.apparent_temperature_2m ? Math.round(current.apparent_temperature_2m) : '-';
-          const visibility = current.visibility ? (current.visibility / 1000).toFixed(1) : '-';
+        .then(data => {
+          const temp = Math.round(data.main.temp);
+          const feelsLike = Math.round(data.main.feels_like);
+          const humidity = data.main.humidity;
+          const windSpeed = Math.round(data.wind.speed * 3.6); // Convert m/s to km/h
+          const visibility = data.visibility ? (data.visibility / 1000).toFixed(1) : '-';
+          const description = data.weather.description;
+          const iconCode = data.weather.icon;
+          const cityName = data.name;
           
           document.getElementById('cityName').textContent = cityName;
           document.getElementById('temperature').textContent = temp + '°C';
-          document.getElementById('description').textContent = descriptions[weatherCode] || 'Unknown';
-          document.getElementById('weatherIcon').textContent = weatherIcons[weatherCode] || '🌤️';
+          document.getElementById('description').textContent = description;
+          document.getElementById('weatherIcon').textContent = weatherIcons[iconCode] || '🌤️';
           document.getElementById('humidity').textContent = humidity + '%';
-          document.getElementById('windSpeed').textContent = (windSpeed === '-' ? '-' : windSpeed + ' km/h');
-          document.getElementById('feelsLike').textContent = (feelsLike === '-' ? '-' : feelsLike + '°C');
-          document.getElementById('visibility').textContent = (visibility === '-' ? '-' : visibility + ' km');
+          document.getElementById('windSpeed').textContent = windSpeed + ' km/h';
+          document.getElementById('feelsLike').textContent = feelsLike + '°C';
+          document.getElementById('visibility').textContent = visibility + ' km';
           
           loadingDiv.classList.remove('show');
           weatherDiv.classList.add('show');
