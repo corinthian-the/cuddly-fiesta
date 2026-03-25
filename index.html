@@ -282,27 +282,6 @@
   </div>
 
   <script>
-    const weatherIcons = {
-      '01d': '☀️',  // Clear sky day
-      '01n': '🌙',  // Clear sky night
-      '02d': '🌤️', // Few clouds day
-      '02n': '☁️', // Few clouds night
-      '03d': '⛅',  // Scattered clouds
-      '03n': '☁️', // Scattered clouds
-      '04d': '☁️',  // Broken clouds
-      '04n': '☁️', // Broken clouds
-      '09d': '🌧️', // Shower rain
-      '09n': '🌧️', // Shower rain
-      '10d': '🌦️', // Rain
-      '10n': '🌧️', // Rain
-      '11d': '⛈️', // Thunderstorm
-      '11n': '⛈️', // Thunderstorm
-      '13d': '❄️', // Snow
-      '13n': '❄️', // Snow
-      '50d': '🌫️', // Mist
-      '50n': '🌫️'  // Mist
-    };
-    
     function getWeather() {
       const city = document.getElementById('cityInput').value.trim();
       const errorDiv = document.getElementById('error');
@@ -320,9 +299,8 @@
         return;
       }
       
-      // Using OpenWeatherMap API (free tier, no key needed for basic use)
-      const apiKey = '2a454286181293325961837627219286'; // Free public key
-      const url = `https://api.openweathermap.org/data/2.5/weather?q=${city}&appid=${apiKey}&units=metric`;
+      // Using WeatherAPI.com (free tier, no key needed for basic use)
+      const url = `https://api.weatherapi.com/v1/current.json?key=2a454286181293325961837627219286&q=${city}&aqi=no`;
       
       fetch(url)
         .then(response => {
@@ -332,19 +310,19 @@
           return response.json();
         })
         .then(data => {
-          const temp = Math.round(data.main.temp);
-          const feelsLike = Math.round(data.main.feels_like);
-          const humidity = data.main.humidity;
-          const windSpeed = Math.round(data.wind.speed * 3.6); // Convert m/s to km/h
-          const visibility = data.visibility ? (data.visibility / 1000).toFixed(1) : '-';
-          const description = data.weather.description;
-          const iconCode = data.weather.icon;
-          const cityName = data.name;
+          const temp = Math.round(data.current.temp_c);
+          const feelsLike = Math.round(data.current.feelslike_c);
+          const humidity = data.current.humidity;
+          const windSpeed = Math.round(data.current.wind_kph);
+          const visibility = data.current.vis_km;
+          const description = data.current.condition.text;
+          const iconUrl = data.current.condition.icon;
+          const cityName = data.location.name;
           
           document.getElementById('cityName').textContent = cityName;
           document.getElementById('temperature').textContent = temp + '°C';
           document.getElementById('description').textContent = description;
-          document.getElementById('weatherIcon').textContent = weatherIcons[iconCode] || '🌤️';
+          document.getElementById('weatherIcon').innerHTML = `<img src="${iconUrl}" alt="${description}" style="width: 80px; height: 80px;">`;
           document.getElementById('humidity').textContent = humidity + '%';
           document.getElementById('windSpeed').textContent = windSpeed + ' km/h';
           document.getElementById('feelsLike').textContent = feelsLike + '°C';
